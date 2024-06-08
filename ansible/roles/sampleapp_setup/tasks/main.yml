@@ -1,0 +1,15 @@
+- name: Check if the folder exists
+  stat:
+    path: /home/ec2-user/raisetech-live8-sample-app
+  register: folder_check
+
+- name: Clone repository
+  git:
+    repo: https://github.com/yuta-ushijima/raisetech-live8-sample-app.git
+    dest: /home/ec2-user/raisetech-live8-sample-app
+  when: not folder_check.stat.exists
+
+- name: bundle install
+  shell: bash -lc "bundle install"
+  args: 
+    chdir: "{{ app_dir }}"

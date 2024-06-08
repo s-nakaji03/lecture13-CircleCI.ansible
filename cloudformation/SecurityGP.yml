@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SecurityGP Template
+
+Resources:
+  Lecture13Sg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Lecture13Sg
+      GroupName: Lecture13Sg
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref SecurityGroupALB
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: Lecture13Sg
+      VpcId: !ImportValue Lecture13VpcId
+  
+  Lecture13RDSSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Lecture13RDSSg
+      GroupName: Lecture13RDSSg
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: Lecture13RDSSg
+      VpcId: !ImportValue Lecture13VpcId
+
+  SecurityGroupALB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SecurityGroupALB
+      GroupName: SecurityGroupALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: SecurityGroupALB
+      VpcId: !ImportValue Lecture13VpcId
+
+  #IAMロール
+  EC2InstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "EC2InstanceRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "AmazonS3FullAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:*"
+                Resource: "*"
+  
+  # Secrets Manager
+  RDSSecret: 
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      Name: "RDSSecret"
+      Description: "RDS password for my RDS instance"
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "admin"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\"[]*?!'
+
+# Outputs
+Outputs:
+  Lecture13Sg:
+    Value: !Ref Lecture13Sg
+    Export:
+      Name: Lecture13SgId
+
+  Lecture13RDSSg:
+    Value: !Ref Lecture13RDSSg
+    Export:
+      Name: Lecture13RDSSgId
+
+  SecurityGroupALB:
+    Value: !Ref SecurityGroupALB
+    Export:
+      Name: SecurityGroupALBId
+
+  RDSSecretArn:
+    Value: !Ref RDSSecret
+    Export:
+      Name: RDSSecretArn
+  
+  EC2InstanceRoleName:
+    Value: !Ref EC2InstanceRole
+    Export:
+      Name: EC2InstanceRoleExportName
+  
+  EC2InstanceRoleArn:
+    Value: !GetAtt EC2InstanceRole.Arn
+    Export:
+      Name: EC2InstanceRoleExportArn

@@ -1,0 +1,37 @@
+---
+- name: remove the MariaDB
+  become_user: root
+  yum:
+    name: mariadb-*
+    state: absent
+
+- name: Import MySQL GPG key
+  become_user: root
+  shell: rpm --import "https://repo.mysql.com/RPM-GPG-KEY-mysql-2023"
+  args:
+    creates: /var/lib/mysql/mysql80-community-release-el7-7.noarch.rpm
+
+- name: install the mysql rpm from a remote repo
+  become_user: root
+  yum:
+    name: 'https://repo.mysql.com//mysql80-community-release-el7-7.noarch.rpm'
+    state: present
+
+- name: install mysql-community-server
+  become_user: root
+  yum: 
+    name: mysql-community-server
+    state: present
+
+- name: install mysql-community-devel
+  become_user: root
+  yum: 
+    name: mysql-community-devel
+    state: present
+
+- name: Start MySQL service
+  become_user: root
+  service:
+    name: mysqld
+    state: started
+    

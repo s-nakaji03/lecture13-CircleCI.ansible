@@ -1,0 +1,105 @@
+---
+- name: check nginx exsits
+  shell: bash -lc "nginx -v"
+  register: nginx_exists
+  changed_when: no
+  ignore_errors: yes
+
+- name: Change permissions of /home/ec2-user
+  become_user: root
+  file:
+    path: /home/ec2-user
+    mode: 0701
+
+- name: Install nginx
+  become_user: root
+  command: amazon-linux-extras install nginx1 -y
+
+
+- name: create default.conf
+  become: true
+  become_method: sudo
+  become_user: root
+  template:
+    src: default.conf.j2
+    dest: /etc/nginx/conf.d/default.conf
+
+- name: nginx permission
+  become: true
+  become_method: sudo
+  become_user: root
+  file: 
+    path: /var/lib
+    state: directory
+    mode: '0775'
+    recurse: yes
+
+- name: edit puma.service
+  become: true
+  become_method: sudo
+  become_user: root
+  template:
+    src: puma.service.j2
+    dest: /etc/systemd/system/puma.service
+
+- name: puma permission
+  become: true
+  become_user: root
+  file: 
+    path: /etc/systemd
+    state: directory
+    mode: '0775'
+    recurse: yes
+
+- name: reload puma.service
+  become: true
+  become_method: sudo
+  become_user: root
+  shell: |
+    systemctl daemon-reload
+
+- name: reload puma.service
+  become: true
+  become_method: sudo
+  become_user: root
+  shell: |
+    systemctl enable puma.service
+
+- name: create tmp/sockets
+  become: true
+  become_method: sudo
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ app_dir }}/tmp/sockets"
+    state: directory
+    mode: "0755"
+    owner: ec2-user
+
+- name: create tmp/pids
+  become: true
+  become_method: sudo
+  become_user: root
+  ansible.builtin.file:
+    path: "{{ app_dir }}/tmp/pids"
+    state: directory
+    mode: "0755"
+    owner: ec2-user
+
+- name: restart server nginx
+  become: true
+  become_method: sudo
+  become_user: root
+  shell: |
+    systemctl restart nginx
+  args:
+    chdir: "{{ app_dir }}"
+
+- name: restart server puma
+  become: true
+  become_method: sudo
+  become_user: root
+  shell: |
+    systemctl restart puma
+  args:
+    chdir: "{{ app_dir }}"
+  

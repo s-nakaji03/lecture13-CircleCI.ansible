@@ -1,0 +1,25 @@
+- name: main-playbook
+  hosts: all
+  become_user: ec2-user
+  become: True
+  become_method: sudo
+
+  vars:
+    app_dir: /home/ec2-user/raisetech-live8-sample-app
+    AWS_ALB_DNS_NAME: "{{ lookup('env','AWS_ALB_DNS_NAME') }}"
+    AWS_RDS_PW: "{{ lookup('env', 'AWS_RDS_PW') }}"
+    AWS_RDS_ENDPOINT: "{{ lookup('env','AWS_RDS_ENDPOINT') }}"
+    AWS_S3_BUCKET: "{{ lookup('env','AWS_S3_BUCKET') }}"
+
+
+  roles:
+    - application_setup
+    - ruby_setup
+    - node_setup
+    - yarn_setup
+    - bundler_setup
+    - mysql_setup
+    - sampleapp_setup
+    - environment_setup
+    - server_setup
+    
